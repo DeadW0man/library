@@ -1,6 +1,7 @@
 from flask import Flask, g, request, jsonify
 from os import getenv
 from sqlite3 import connect
+from db.database  import prepare_tables
 
 solaris_app = Flask('solaris')
 
