@@ -1,3 +1,23 @@
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, Field, EmailStr, validator
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    password: str
+
+class Book(BaseModel):
+    id: int
+    title: str
+    author: str
+    release_year: int
+    owner_id: int
+
+class Session(BaseModel):
+    session_id: int
+    user_id: int
 
 def user_row_to_dict(user_row):
     return {
