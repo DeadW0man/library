@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, Field, EmailStr
 
 class Register(BaseModel):
     name: str
@@ -10,6 +12,11 @@ class User(BaseModel):
     name: str
     email: str
     password: str
+
+class UserCreate(BaseModel):
+
+class UserLogin(BaseModel):
+
 
 class Book(BaseModel):
     id: int
