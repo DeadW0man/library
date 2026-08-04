@@ -14,9 +14,9 @@ class User(BaseModel):
     password: str
 
 class UserCreate(BaseModel):
-
+    pass
 class UserLogin(BaseModel):
-
+    pass
 
 class Book(BaseModel):
     id: int
