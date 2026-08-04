@@ -1,7 +1,0 @@
-from flask import request
-from repository.repository import validate_session_id
-
-def is_auth_valid():
-    if 'SessionID' in request.headers:
-        return validate_session_id(request.headers.get('SessionID'))
-    return False
