@@ -1,161 +1,119 @@
 from flask import Blueprint, request, jsonify
-from db.database  import get_db
-from services.services import is_auth_valid
-import schemas.schemas 
+from pydantic import ValidationError
+from app.utils.auth import is_auth_valid, get_current_user
+from app.schemas.schemas import UserRegister, UserLogin, BookCreate, ShareCreate, ShareReturn
+import app.services.services as service
 
-@solaris_app.route('/', methods=['GET'])
+api_bp = Blueprint('api', __name__)
+
+# 1. Главная страница
+@api_bp.route('/', methods=['GET'])
 def index():
     return 'Hello from Solaris app'
 
-@solaris_app.route('/register', methods=['POST'])
+# 2. Регистрация
+@api_bp.route('/register', methods=['POST'])
 def register():
-    email = request.json['email']
-    name = request.json['name']
-    password = request.json['password']
-    cursor = get_db().cursor()
-    user = cursor.execute(f'SELECT * FROM users WHERE email="{email}";').fetchone()
-    if user is not None:
-        return 'User already exists', 400
-    cursor.execute(f'INSERT INTO users (email, name, password) VALUES ("{email}", "{name}", "{password}");')
-    cursor.close()
-    get_db().commit()
-    return 'Created', 201
+    try:
+        data = UserRegister(**request.json)
+    except ValidationError as e:
+        return jsonify(e.errors()), 400
+    res, status = service.register_user(data.email, data.name, data.password)
+    return (jsonify(res) if isinstance(res, dict) else res), status
 
-@solaris_app.route('/login', methods=['POST'])
+# 3. Авторизация (логин)
+@api_bp.route('/login', methods=['POST'])
 def login():
-    email = request.json['email']
-    password = request.json['password']
-    cursor = get_db().cursor()
-    user = cursor.execute(f'SELECT * FROM users WHERE email="{email}" and password="{password}";').fetchone()
-    print(user)
-    if user is None:
-       return 'Доступ запрещен', 403
-    cursor.execute(f'INSERT INTO sessions (user_id) VALUES ("{user[0]}");')
-    cursor.close()
-    get_db().commit()
-    return jsonify({'user_id': user[0], 'session_id':cursor.lastrowid}), 200
+    try:
+        data = UserLogin(**request.json)
+    except ValidationError as e:
+        return jsonify(e.errors()), 400
+    res, status = service.login_user(data.email, data.password)
+    return (jsonify(res) if isinstance(res, dict) else res), status
 
-@solaris_app.route('/user/<int:user_id>')
+# 4. Получить пользователя по ID
+@api_bp.route('/user/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     if not is_auth_valid():
         return 'Request denied, invalid session', 403
-    user = get_user_by_id(user_id)
-    if user is None:
-        return 'User not found', 404
-    return jsonify(user_row_to_dict(user)), 200
+    res, status = service.get_user(user_id)
+    return (jsonify(res) if isinstance(res, dict) else res), status
 
-@solaris_app.route('/users')
+# 5. Получить всех пользователей
+@api_bp.route('/users', methods=['GET'])
 def get_users():
     if not is_auth_valid():
         return 'Request denied, invalid session', 403
-    cursor = get_db().cursor()
-    users = cursor.execute("SELECT * FROM users;").fetchall()
-    cursor.close()
-    res = []
-    for u in users:
-        res.append(user_row_to_dict(u))
-    response = {
-        'users': res
-    }
-    return jsonify(response), 200
+    res, status = service.get_all_users()
+    return jsonify(res), status
 
-@solaris_app.route('/book', methods=['POST'])
+# 6. Добавить книгу
+@api_bp.route('/book', methods=['POST'])
 def add_book():
     if not is_auth_valid():
         return 'Request denied, invalid session', 403
-    owner_id = get_user_by_session_id(request.headers.get('SessionID'))[0]
-    title = request.json['title']
-    author = request.json['author']
-    release_year = request.json['release_year']
-    cursor = get_db().cursor()
-    cursor.execute(f'INSERT INTO books(title, author, release_year, owner_id) VALUES("{title}", "{author}", {release_year}, {owner_id});')
-    get_db().commit()
-    return 'Created', 201
+    try:
+        data = BookCreate(**request.json)
+    except ValidationError as e:
+        return jsonify(e.errors()), 400
+    user = get_current_user()
+    res, status = service.add_book(user[0], data.title, data.author, data.release_year)
+    return (jsonify(res) if isinstance(res, dict) else res), status
 
-@solaris_app.route('/books', methods=['GET'])
+# 7. Получить список всех книг
+@api_bp.route('/books', methods=['GET'])
 def get_books():
     if not is_auth_valid():
         return 'Request denied, invalid session', 403
-    cursor = get_db().cursor()
-    books = cursor.execute("SELECT * FROM books;").fetchall()
-    cursor.close()
-    res = []
-    for u in books:
-        res.append(book_row_to_dict(u))
-    response = {
-        'book': res
-    }
-    return jsonify(response), 200
+    res, status = service.get_all_books()
+    return jsonify(res), status
 
-@solaris_app.route('/book/<int:book_id>')
+# 8. Получить книгу по ID
+@api_bp.route('/book/<int:book_id>', methods=['GET'])
 def get_book(book_id):
     if not is_auth_valid():
         return 'Request denied, invalid session', 403
-    books = get_book_by_id(book_id)
-    if books is None:
-        return 'Book not found', 404
-    return jsonify(book_row_to_dict(books)), 200
+    res, status = service.get_book(book_id)
+    return (jsonify(res) if isinstance(res, dict) else res), status
 
-@solaris_app.route('/share', methods=['POST'])
+# 9. Поделиться книгой
+@api_bp.route('/share', methods=['POST'])
 def share_book():
     if not is_auth_valid():
         return 'Request denied, invalid session', 403
-    owner_id = get_user_by_session_id(request.headers.get('SessionID'))[0]
-    book_id = request.json['book_id']
-    taker_id = request.json['taker_id']
-    final_date = request.json['final_date']
-    if get_user_by_id(taker_id) == None:
-        return 'Taker not found', 404
-    if get_book_by_id(book_id) == None:
-        return 'Book not found', 404
-    cursor = get_db().cursor()
-    cursor.execute(
-        f'INSERT INTO shares(book_id, giver_id, taker_id, final_date) VALUES({book_id}, {owner_id}, {taker_id}, "{final_date}");')
-    get_db().commit()
-    return jsonify({'share_id': cursor.lastrowid}), 200
+    try:
+        data = ShareCreate(**request.json)
+    except ValidationError as e:
+        return jsonify(e.errors()), 400
+    user = get_current_user()
+    res, status = service.share_book(user[0], data.book_id, data.taker_id, data.final_date)
+    return (jsonify(res) if isinstance(res, dict) else res), status
 
-@solaris_app.route('/return', methods=['POST'])
+# 10. Вернуть книгу
+@api_bp.route('/return', methods=['POST'])
 def return_book():
     if not is_auth_valid():
         return 'Request denied, invalid session', 403
-    owner_id = get_user_by_session_id(request.headers.get('SessionID'))[0]
-    share_id = request.json['share_id']
-    share = get_share_by_id(share_id)
-    if share == None:
-        return 'Share not found', 404
-    if share[2] != owner_id:
-        return 'You are not an owner of the book', 403
-    cursor = get_db().cursor()
-    cursor.execute(
-        f'DELETE FROM shares WHERE id={share_id};')
-    get_db().commit()
-    return 'Book was returned', 200
+    try:
+        data = ShareReturn(**request.json)
+    except ValidationError as e:
+        return jsonify(e.errors()), 400
+    user = get_current_user()
+    res, status = service.return_book(user[0], data.share_id)
+    return (jsonify(res) if isinstance(res, dict) else res), status
 
-@solaris_app.route('/shares', methods=['GET'])
+# 11. Получить список всех шерингов
+@api_bp.route('/shares', methods=['GET'])
 def get_shares():
     if not is_auth_valid():
         return 'Request denied, invalid session', 403
-    cursor = get_db().cursor()
-    shares = cursor.execute("SELECT * FROM shares;").fetchall()
-    cursor.close()
+    res, status = service.get_all_shares()
+    return jsonify(res), status
 
-    res = []
-    for u in shares:
-        res.append(share_row_to_dict(u))
-    response = {
-        'shares': res
-    }
-    return jsonify(response), 200
-
-
-@solaris_app.route('/book/<int:book_id>', methods=['DELETE'])
+# 12. Удалить книгу (DELETE)
+@api_bp.route('/book/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
     if not is_auth_valid():
-        return 'Request denied, invalid session', 403    
-    books = get_book_by_id(book_id)
-    cursor = get_db().cursor()
-    cursor.execute(f'DELETE FROM books WHERE id={book_id};')
-    get_db().commit()
-    cursor.close()
-    return "The book was removed", 200
-
+        return 'Request denied, invalid session', 403
+    res, status = service.delete_book(book_id)
+    return (jsonify(res) if isinstance(res, dict) else res), status
