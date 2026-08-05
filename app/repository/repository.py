@@ -1,6 +1,5 @@
 from app.db.database import get_db
 
-# Пользователи и Сессии
 def get_user_by_id(user_id):
     cursor = get_db().cursor()
     user = cursor.execute("SELECT * FROM users WHERE id = ?;", (user_id,)).fetchone()
@@ -47,7 +46,6 @@ def get_all_users():
     cursor.close()
     return users
 
-# Книги
 def get_book_by_id(book_id):
     cursor = get_db().cursor()
     book = cursor.execute("SELECT * FROM books WHERE id = ?;", (book_id,)).fetchone()
@@ -74,7 +72,6 @@ def delete_book(book_id):
     db.commit()
     cursor.close()
 
-# Шеринги
 def get_share_by_id(share_id):
     cursor = get_db().cursor()
     share = cursor.execute("SELECT * FROM shares WHERE id = ?;", (share_id,)).fetchone()
