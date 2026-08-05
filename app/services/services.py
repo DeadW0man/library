@@ -1,4 +1,5 @@
 from app.repository.repository import get_user_by_email, create_user, get_user_by_credentials
+from app.utils.utils import user_row_to_dict, book_row_to_dict, share_row_to_dict
 
 def register_user(email, name, password):
     if repo.get_user_by_email(email):
