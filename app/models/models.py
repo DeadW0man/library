@@ -1,45 +1,26 @@
-from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field, EmailStr, validator
+from pydantic import BaseModel
 
 class User(BaseModel):
-    id: int
+    id: Optional[int] = None
     name: str
-    email: EmailStr
+    email: str
     password: str
 
+class Session(BaseModel):
+    session_id: Optional[int] = None
+    user_id: int
+
 class Book(BaseModel):
-    id: int
+    id: Optional[int] = None
     title: str
     author: str
     release_year: int
     owner_id: int
 
-class Session(BaseModel):
-    session_id: int
-    user_id: int
-
-def user_row_to_dict(user_row):
-    return {
-        'id': user_row[0],
-        'name': user_row[1],
-        'email': user_row[2]
-    }
-
-def book_row_to_dict(book_row):
-    return {
-        'id': book_row[0],
-        'title': book_row[1],
-        'author': book_row[2],
-        'release_year:': book_row[3],
-        'owner_id': book_row[4],
-    }
-
-def share_row_to_dict(share_row):
-    return {
-        'id': share_row[0],
-        'book_id': share_row[1],
-        'giver_id': share_row[2],
-        'taker_id:': share_row[3],
-        'final_date': share_row[4],
-    }
+class Share(BaseModel):
+    id: Optional[int] = None
+    book_id: int
+    giver_id: int
+    taker_id: int
+    final_date: str
