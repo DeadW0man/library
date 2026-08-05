@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from db.database  import get_db
 from services.services import is_auth_valid
-import repository.repository
 import schemas.schemas 
 
 @solaris_app.route('/', methods=['GET'])
