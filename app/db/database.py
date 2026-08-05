@@ -11,7 +11,6 @@ def get_db():
     return db
 
 def prepare_tables() -> None:
-    # Все запросы к базе делаются через курсор
     cursor = get_db().cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
