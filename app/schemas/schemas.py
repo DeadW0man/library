@@ -1,37 +1,42 @@
-from typing import Optional
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, EmailStr
 
-class Register(BaseModel):
+class UserRegister(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     password: str
 
-class User(BaseModel):
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
     id: int
     name: str
-    email: str
-    password: str
+    email: EmailStr
 
-class UserCreate(BaseModel):
-    pass
-class UserLogin(BaseModel):
-    pass
+class BookCreate(BaseModel):
+    title: str
+    author: str
+    release_year: int
 
-class Book(BaseModel):
+class BookResponse(BaseModel):
     id: int
     title: str
     author: str
     release_year: int
     owner_id: int
+    
+class ShareCreate(BaseModel):
+    book_id: int
+    taker_id: int
+    final_date: str
 
-class Share(BaseModel):
+class ShareReturn(BaseModel):
+    share_id: int
+
+class ShareResponse(BaseModel):
     id: int
     book_id: int
     giver_id: int
     taker_id: int
     final_date: str
-
-class Session(BaseModel):
-    session_id: int
-    user_id: int
-
