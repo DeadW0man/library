@@ -1,5 +1,5 @@
-import repository.repository as repo
-from schemas.schemas import BookResponse, ShareResponse, UserResponse
+import app.repository.repository as repo
+from app.schemas.schemas import BookResponse, ShareResponse, UserResponse
 
 
 def user_row_to_dict(row):

@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 
-from repository.repository import get_user_by_session_id
-from schemas.schemas import UserRegister, UserLogin, BookCreate, ShareCreate, ShareReturn
-import services.services as service
+from app.repository.repository import get_user_by_session_id
+from app.schemas.schemas import UserRegister, UserLogin, BookCreate, ShareCreate, ShareReturn
+import app.services.services as service
 
 api_bp = Blueprint('api', __name__)
 

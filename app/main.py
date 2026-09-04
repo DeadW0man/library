@@ -1,7 +1,7 @@
 from os import getenv
 from flask import Flask
-from api.http.routes import api_bp
-from db.db import close_db, prepare_tables
+from app.api.http import api_bp
+from app.db.db import close_db, prepare_tables
 
 solaris_app = Flask('solaris')
 solaris_app.register_blueprint(api_bp)
